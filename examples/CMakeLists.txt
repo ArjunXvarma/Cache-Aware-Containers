@@ -1,0 +1,5 @@
+add_executable(cac_example_basic basic_usage.cpp)
+target_link_libraries(cac_example_basic PRIVATE cac)
+
+add_executable(cac_particle_sim particle_sim.cpp)
+target_link_libraries(cac_particle_sim PRIVATE cac)
