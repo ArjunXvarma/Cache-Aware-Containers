@@ -31,6 +31,8 @@
         "string": "cpp",
         "string_view": "cpp",
         "typeinfo": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "array": "cpp",
+        "vector": "cpp"
     }
 }

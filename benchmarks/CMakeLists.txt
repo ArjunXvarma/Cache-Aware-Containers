@@ -1,9 +1,9 @@
 add_executable(cac_benchmarks
-    # bench_main.cpp
+    bench_main.cpp
     # aos_vs_soa.cpp
     # vector_growth.cpp
     # access_patterns.cpp
-    aos_baseline.cpp
+    # aos_baseline.cpp
 )
 
 target_link_libraries(cac_benchmarks
