@@ -1,8 +1,8 @@
 add_executable(cac_tests
     # test_main.cpp
-    test_cache_vector.cpp
+    # test_cache_vector.cpp
     # test_aos.cpp
-    # test_soa.cpp
+    test_soa.cpp
     # test_iterators.cpp
 )
 

@@ -16,6 +16,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile commands (for clangd, tooling)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # Default build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -60,6 +62,8 @@ target_compile_options(cac INTERFACE
 # -------------------------------
 # Warnings (optional but strong signal)
 # -------------------------------
+target_compile_options(cac INTERFACE -fsanitize=address -g)
+target_link_options(cac INTERFACE -fsanitize=address)
 if(CAC_ENABLE_WARNINGS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(cac INTERFACE
