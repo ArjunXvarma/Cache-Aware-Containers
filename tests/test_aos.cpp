@@ -2,9 +2,9 @@
 #include "../include/cac/aos_container.hpp"
 #include "../include/cac/particle.hpp"
 
-using namespace cac;
+namespace cac {
 
-int main() {
+void test_aos_container() {
     aos_container<Particle> particles;
 
     particles.push_back({1,2,3,4,5,6});
@@ -21,7 +21,11 @@ int main() {
         sum += p.x;
     }
 
-    assert(sum == 8);
+    assert(sum == 8.f);
 
-    return 0;
+    particles.reserve(10);
+    assert(particles.size() == 2);
+    assert(particles.capacity() >= 10);
 }
+
+} // namespace cac

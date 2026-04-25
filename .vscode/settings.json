@@ -33,6 +33,7 @@
         "typeinfo": "cpp",
         "algorithm": "cpp",
         "array": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "iostream": "cpp"
     }
 }

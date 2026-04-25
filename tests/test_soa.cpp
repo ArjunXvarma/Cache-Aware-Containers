@@ -1,10 +1,10 @@
 #include <cassert>
 #include "../include/cac/soa_container.hpp"
-#include "../include/cac/aos_container.hpp"
+#include "../include/cac/particle.hpp"
 
-using namespace cac;
+namespace cac {
 
-int main() {
+void test_soa_container() {
     soa_particle_container soa;
 
     soa.push_back(1,2,3,4,5,6);
@@ -15,16 +15,20 @@ int main() {
         p.x += 1;
     }
 
-    assert(soa[0].x == 2);
-    assert(soa[1].x == 8);
+    assert(soa[0].x == 2.f);
+    assert(soa[1].x == 8.f);
 
-    // Copy semantics
     Particle p = soa[0];
-    assert(p.x == 2);
+    assert(p.x == 2.f);
+    assert(p.vx == 4.f);
 
-    // Assignment
-    soa[0] = Particle{100,0,0,0,0,0};
-    assert(soa[0].x == 100);
+    soa[0] = Particle{100.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    assert(soa[0].x == 100.f);
 
-    return 0;
+    const soa_particle_container& const_soa = soa;
+    auto const_proxy = const_soa[1];
+    assert(const_proxy.x == 8.f);
+    assert(const_proxy.vx == 10.f);
 }
+
+} // namespace cac
