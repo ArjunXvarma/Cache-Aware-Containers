@@ -1,338 +1,288 @@
-# Cache-Aware Containers - Benchmarking Suite
+# Benchmark Results — Cache-Aware Containers
 
-A **professional-grade benchmarking framework** for evaluating performance characteristics of cache-aware container implementations.
+This document presents performance results for the cache-aware container library, focusing on **memory layout, access patterns, alignment, growth strategies, and prefetching**.
 
-## 🎯 What You Get
+All benchmarks were run using a custom harness with:
 
-### Five Focused Benchmark Suites
-
-1. **AoS vs SoA Comparison** (`--aos-vs-soa`)
-   - Sequential single-field updates
-   - Full multi-field updates
-   - Shows layout efficiency across workloads
-
-2. **Access Pattern Analysis** (`--access-patterns`)
-   - Sequential (baseline)
-   - Strided (varying stride: 2, 4, 8)
-   - Random (worst-case)
-   - Reveals cache behavior
-
-3. **Alignment Impact** (`--alignment`)
-   - 32-byte alignment
-   - 64-byte alignment
-   - 128-byte alignment
-   - Measures cache-line efficiency
-
-4. **Growth Policy Comparison** (`--growth-policy`)
-   - 2x growth (fewer reallocations)
-   - 1.5x growth (memory-efficient)
-   - Evaluates trade-offs
-
-5. **Prefetching Demonstration** (`--prefetch`)
-   - Baseline sequential access
-   - With `__builtin_prefetch()` lookahead
-   - Shows optimization impact
-
-### Rigorous Measurement Framework
-
-- ✅ **3 warmup runs** to stabilize caches
-- ✅ **10 measurement runs** for confidence
-- ✅ **Statistical analysis**: min, max, mean, stddev
-- ✅ **High-resolution timing**: nanosecond precision
-- ✅ **Optimization prevention**: volatile accumulators
-- ✅ **Data scaling**: 1K → 10M elements (reveals cache effects)
-
-### Professional Output
-
-```
-================================================================================
-AoS vs SoA: Sequential Update (x += vx)
-================================================================================
-Benchmark                      | Min (ms)     | Mean (ms)    | Max (ms)    
---------------------------------------------------------------------------------
-AoS Sequential 1000            | 0.005        ms | 0.006        ms | 0.011      ms
-SoA Sequential 1000            | 0.004        ms | 0.005        ms | 0.009      ms
-...
-```
-
-### Clean CLI Interface
-
-```bash
-./cac_benchmarks --aos-vs-soa      # Run AoS vs SoA benchmarks
-./cac_benchmarks --alignment        # Test alignment impact
-./cac_benchmarks --access-patterns  # Evaluate access patterns
-./cac_benchmarks --growth-policy    # Compare growth strategies
-./cac_benchmarks --prefetch         # Test prefetching
-./cac_benchmarks                    # Run all benchmarks (default)
-./cac_benchmarks --help             # Show help
-```
-
-## 🚀 Quick Start
-
-### Build
-
-```bash
-cd build
-cmake --build . --target cac_benchmarks
-```
-
-### Run
-
-```bash
-# Run all benchmarks
-./benchmarks/cac_benchmarks
-
-# Run specific benchmark
-./benchmarks/cac_benchmarks --aos-vs-soa
-
-# Get help
-./benchmarks/cac_benchmarks --help
-```
-
-## 📊 Interpreting Results
-
-### Key Metrics
-
-| Metric | Meaning |
-|--------|---------|
-| **Min** | Best-case performance (tightest loops) |
-| **Mean** | Average performance (primary metric) |
-| **Max** | Worst-case performance (cache misses) |
-| **Spread** | Consistency (tight = stable, wide = noisy) |
-
-### Reading Performance Jumps
-
-Performance changes reveal cache boundaries:
-
-- **~32 KB**: L1 cache boundary
-- **~256 KB**: L2 cache boundary  
-- **~8 MB**: L3 cache boundary
-- **Beyond 50 MB**: DRAM bandwidth limited
-
-### Layout Comparison
-
-**AoS (Array-of-Structures) Better For:**
-- Complete particle access workloads
-- When all fields needed together
-- Simpler memory management
-
-**SoA (Structure-of-Arrays) Better For:**
-- Selective field access
-- Data-parallel operations
-- Better cache locality for components
-- Physics simulations
-
-## 📁 File Structure
-
-```
-benchmarks/
-├── benchmark.hpp                    # Core framework (200 lines)
-├── bench_main.cpp                   # CLI entry point (110 lines)
-├── aos_vs_soa.cpp                   # AoS vs SoA benchmarks (120 lines)
-├── access_patterns.cpp              # Access pattern tests (140 lines)
-├── alignment.cpp                    # Alignment tests (45 lines)
-├── growth_policy.cpp                # Growth policy tests (45 lines)
-└── prefetching.cpp                  # Prefetch tests (85 lines)
-
-├── CMakeLists.txt                   # Build configuration
-└── ../BENCHMARKING.md               # Comprehensive user guide
-```
-
-## 🏗️ Architecture
-
-### Core Components
-
-**`BenchmarkHarness`**
-- Runs benchmark with configurable warmup/measurement runs
-- Handles timing and statistical computation
-- Prevents compiler optimization of benchmark work
-
-**`ResultFormatter`**
-- Formats results as human-readable tables
-- Supports CSV output for data analysis
-- Clean, aligned column output
-
-**Benchmark Functions**
-- Each suite is independent
-- Easy to add new benchmarks
-- Reusable components
-
-### Design Principles
-
-✅ **Modular**: Independent benchmark suites
-✅ **Reusable**: Composable framework components
-✅ **Clean**: Minimal abstractions, readable code
-✅ **Fast**: Pre-allocation, minimal overhead
-✅ **Rigorous**: Warm-ups, multiple runs, statistics
-✅ **Extensible**: Simple template for new benchmarks
-✅ **Professional**: Quality output, comprehensive docs
-
-## 🔧 Customization
-
-### Configure Runs
-
-Edit benchmark files to change:
-- Warmup runs: `BenchmarkHarness harness(3, 10)` → `(5, 20)`
-- Data sizes: `{1000, 100000, 1000000, 10000000}` → custom list
-- Prefetch distance: `const size_t prefetch_distance = 8`
-
-### Add New Benchmark
-
-1. Create `benchmarks/my_benchmark.cpp`:
-
-```cpp
-#include "benchmark.hpp"
-#include "../include/cac/cache_vector.hpp"
-
-using namespace cac;
-using namespace cac::bench;
-
-namespace {
-    void benchmark_my_test() {
-        ResultFormatter::print_header("My Test");
-        BenchmarkHarness harness(3, 10);
-        
-        for (size_t size : {1000, 100000, 1000000, 10000000}) {
-            cache_vector<Particle> vec;
-            vec.reserve(size);
-            for (size_t i = 0; i < size; ++i) {
-                vec.push_back(Particle{1,2,3,0.1f,0.2f,0.3f});
-            }
-            
-            auto stats = harness.run([&vec]() {
-                volatile float acc = 0.f;
-                for (size_t i = 0; i < vec.size(); ++i) {
-                    acc += vec[i].x;
-                }
-                (void)acc;
-            }, size);
-            
-            ResultFormatter::print_result("Test " + std::to_string(size), stats);
-        }
-        ResultFormatter::print_separator();
-    }
-}
-
-void run_my_benchmark_benchmarks() {
-    benchmark_my_test();
-}
-```
-
-2. Update `bench_main.cpp`:
-   - Add forward declaration
-   - Add CLI option
-   - Call function in main
-
-3. Update `CMakeLists.txt`:
-   - Add `my_benchmark.cpp` to sources
-
-4. Rebuild:
-```bash
-cd build && cmake --build . --target cac_benchmarks
-```
-
-## 📚 Documentation
-
-- **`BENCHMARKING.md`**: Comprehensive user guide
-  - Detailed benchmark descriptions
-  - Performance analysis tips
-  - System-specific interpretation guidance
-  - Optimization guidelines
-  
-- **`BENCHMARKING_IMPLEMENTATION.md`**: Technical overview
-  - Component descriptions
-  - Design decisions
-  - Code quality notes
-  - Future enhancement ideas
-
-## ⚡ Performance Tips
-
-### For Reproducibility
-
-1. Close other applications
-2. Run benchmarks multiple times
-3. Compare mean times (min is too optimistic)
-4. Check for wide min/max spread (indicates noise)
-
-### For Accuracy
-
-1. Warm-up runs (already done)
-2. Multiple measurement runs (default: 10)
-3. Pre-allocate all data (avoid measuring allocation)
-4. Use volatile to prevent optimizations
-
-### For Analysis
-
-1. Plot mean times vs. data size
-2. Look for sharp jumps (cache boundaries)
-3. Compare across different alignments
-4. Correlate with system cache sizes
-
-## 🔬 What's Measured
-
-### Instruction-Level
-- CPU cycles
-- Cache hits/misses (indirectly through timing)
-- Memory bandwidth utilization
-
-### Algorithm-Level
-- Layout efficiency (AoS vs SoA)
-- Access pattern impact (sequential vs. random)
-- Alignment effectiveness
-
-### System-Level
-- Cache hierarchy behavior
-- DRAM bandwidth
-- Memory allocation overhead
-
-## 🎓 Learning Outcomes
-
-After running these benchmarks, you'll understand:
-
-1. ✅ When AoS or SoA is better for your workload
-2. ✅ How alignment affects cache performance
-3. ✅ Impact of access patterns on performance
-4. ✅ Trade-offs in memory allocation strategies
-5. ✅ Value of low-level optimizations (prefetching)
-6. ✅ How to measure performance rigorously
-
-## ⚙️ Requirements
-
-- **C++20** compiler (g++, clang, MSVC)
-- **CMake 3.12+**
-- Standard library only (no external dependencies)
-- macOS, Linux, or Windows
-
-## 📝 License
-
-Same as Cache-Aware Containers project
-
-## 🤝 Contributing
-
-To add benchmarks:
-1. Follow the template structure
-2. Use the `BenchmarkHarness` framework
-3. Include comprehensive documentation
-4. Test thoroughly
-5. Update CMakeLists.txt and main entry point
-
-## ❓ FAQ
-
-**Q: Why 3 warmup runs?**
-A: Sufficient to stabilize caches without excessive overhead. Adjust if needed.
-
-**Q: Why 10 measurement runs?**
-A: Balances confidence (tighter stats) with runtime. Min/max spread shows reliability.
-
-**Q: Can I change data sizes?**
-A: Yes! Edit the `sizes` vector in any benchmark function.
-
-**Q: How do I know if results are valid?**
-A: Tight min/max spread indicates stable, reproducible results. Wide spread suggests OS interference.
-
-**Q: Should I run on isolated CPU?**
-A: Not necessary, but helps reduce variance. Default results are reproducible.
+* Warm-up iterations
+* Multiple measurement runs
+* Min / Mean / Max reporting
 
 ---
 
-**Happy Benchmarking!** 🚀
+# Benchmark Philosophy
+
+The goal is not just to measure speed, but to understand:
+
+* How **data layout** affects performance
+* How **access patterns** interact with CPU caches
+* When low-level optimizations like **prefetching** matter
+
+Each experiment isolates a single variable.
+
+---
+
+# AoS vs SoA
+
+## Sequential Update (`x += vx`)
+
+| Size | AoS (ms) | SoA (ms) | Improvement |
+| ---- | -------- | -------- | ----------- |
+| 1e5  | 0.535    | 0.516    | ~3.5%       |
+| 1e6  | 5.276    | 5.098    | ~3.4%       |
+| 1e7  | 52.750   | 50.849   | ~3.6%       |
+
+### Insight
+
+SoA provides **modest improvements (~3–4%)** for scalar sequential workloads.
+
+* Accesses are already predictable
+* Hardware prefetcher is highly effective
+* Proxy abstraction introduces slight overhead
+
+---
+
+## Full Update (`x,y,z += vx,vy,vz`)
+
+| Size | AoS (ms) | SoA (ms) |
+| ---- | -------- | -------- |
+| 1e6  | 5.211    | 5.191    |
+| 1e7  | 52.281   | 51.907   |
+
+### Insight
+
+AoS and SoA perform similarly when **all fields are accessed**.
+
+* AoS benefits from loading all fields in one cache line
+* SoA requires multiple independent memory streams
+
+---
+
+# Access Patterns
+
+## Sequential
+
+| Size | Time (ms) |
+| ---- | --------- |
+| 1e6  | ~5.07     |
+| 1e7  | ~50.5     |
+
+Baseline for optimal memory access.
+
+---
+
+## Strided Access
+
+| Stride | 1e7 Time (ms) |
+| ------ | ------------- |
+| 1      | ~50           |
+| 2      | ~26           |
+| 4      | ~13           |
+| 8      | ~23           |
+
+### Insight
+
+* Performance scales roughly with **data touched**
+* Plateau at higher strides due to **cache line granularity**
+* Hardware prefetch becomes less effective
+
+---
+
+## Random Access
+
+| Size | Time (ms) |
+| ---- | --------- |
+| 1e6  | ~10.2     |
+| 1e7  | ~365      |
+
+### Key Result
+
+> Random access is ~7× slower than sequential.
+
+### Why?
+
+* Breaks spatial locality
+* Causes frequent cache misses
+* Memory latency dominates execution
+
+---
+
+# Alignment Impact
+
+| Alignment | 1e7 Mean (ms) |
+| --------- | ------------- |
+| 32B       | ~50.7         |
+| 64B       | ~50.6         |
+| 128B      | ~50.4         |
+
+### Insight
+
+Alignment has **minimal impact** for this workload.
+
+Reason:
+
+* Sequential access already aligns well with cache lines
+* Memory bandwidth dominates performance
+
+---
+
+# Growth Policy
+
+## Push Back Performance (1e7 elements)
+
+| Policy | Mean (ms) |
+| ------ | --------- |
+| Double | ~355      |
+| 1.5×   | ~378      |
+
+### Insight
+
+* **Doubling growth is faster (~6–8%)**
+* 1.5× growth causes:
+
+  * More reallocations
+  * Higher total copy cost
+
+### Note
+
+Max values show high variance due to:
+
+* OS allocation behavior
+* Page faults
+* Memory fragmentation
+
+Mean values are more reliable.
+
+---
+
+# Prefetching
+
+## Sequential
+
+| Size | No Prefetch | Prefetch |
+| ---- | ----------- | -------- |
+| 1e7  | ~50.5 ms    | ~50.5 ms |
+
+### Insight
+
+No improvement—hardware prefetch already optimal.
+
+---
+
+## Large Stride (64)
+
+| Size | No Prefetch | Prefetch |
+| ---- | ----------- | -------- |
+| 1e7  | ~1.61 ms    | ~1.58 ms |
+
+### Insight
+
+* Slight improvement (~2–3%)
+* Prefetch helps when hardware prefetch struggles
+
+---
+
+## Prefetch Distance Sweep
+
+| Distance | 1e7 Mean (ms) |
+| -------- | ------------- |
+| 16       | ~3.52         |
+| 32       | ~3.09         |
+| 64       | ~2.78         |
+| 128      | ~2.89         |
+| 256      | ~3.04         |
+
+### Key Insight
+
+> There exists an optimal prefetch distance (~64).
+
+Too small:
+
+* Data not ready in time
+
+Too large:
+
+* Cache pollution
+
+---
+
+## Raw Array (SoA-style)
+
+| Size | No Prefetch | Prefetch  |
+| ---- | ----------- | --------- |
+| 1e7  | ~50.47 ms   | ~50.45 ms |
+
+### Insight
+
+Even without proxy abstraction:
+
+> Prefetching provides negligible benefit for sequential workloads.
+
+---
+
+# Key Takeaways
+
+## 1. Memory Access Dominates Performance
+
+* Sequential access is **orders of magnitude faster**
+* Random access severely degrades performance
+
+---
+
+## 2. SoA vs AoS Depends on Access Pattern
+
+* SoA wins for **selective field access**
+* AoS performs well for **full object usage**
+
+---
+
+## 3. Hardware Prefetching is Highly Effective
+
+* Manual prefetching rarely helps
+* Only beneficial in:
+
+  * large strides
+  * irregular access patterns
+
+---
+
+## 4. Growth Strategy Matters
+
+* Doubling reduces reallocations
+* Leads to better amortized performance
+
+---
+
+## 5. Alignment is Context-Dependent
+
+* No effect in sequential workloads
+* More important for:
+
+  * SIMD
+  * multithreading
+  * false sharing
+
+---
+
+# Conclusion
+
+These results reinforce a key principle:
+
+> **Performance is determined not just by algorithms, but by how data is accessed in memory.**
+
+Understanding:
+
+* cache behavior
+* memory layout
+* access patterns
+
+is critical for building high-performance systems.
+
+---
+
+# Future Work
+
+* SIMD/vectorization experiments
+* Parallel iteration + false sharing analysis
+* Irregular workloads (pointer chasing, graphs)
+* NUMA-aware memory allocation

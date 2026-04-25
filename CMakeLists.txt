@@ -30,7 +30,6 @@ option(CAC_ENABLE_WARNINGS "Enable compiler warnings" ON)
 option(CAC_ENABLE_SANITIZERS "Enable sanitizers" OFF)
 option(CAC_BUILD_TESTS "Build unit tests" OFF)
 option(CAC_BUILD_BENCHMARKS "Build benchmarks" OFF)
-option(CAC_BUILD_EXAMPLES "Build examples" OFF)
 
 # -------------------------------
 # Include custom CMake modules
@@ -85,8 +84,4 @@ endif()
 
 if(CAC_BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
-endif()
-
-if(CAC_BUILD_EXAMPLES)
-    add_subdirectory(examples)
 endif()
