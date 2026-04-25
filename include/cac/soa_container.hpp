@@ -56,6 +56,10 @@ private:
 public:
     soa_particle_container() : size_(0), capacity_(0) {}
     
+    size_t size() const { return size_; }
+    size_t capacity() const { return capacity_; }
+    bool empty() const { return size_ == 0; }
+    
     void reserve(size_t new_cap) {
         if (new_cap <= capacity_) return;
 

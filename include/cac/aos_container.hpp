@@ -28,7 +28,7 @@ public:
 
         T* new_data = static_cast<T*>(operator new[](new_cap * sizeof(T)));
 
-        for (int i = 0; i < size_; i++) {
+        for (size_t i = 0; i < size_; i++) {
             new (&new_data[i]) T(std::move(data_[i]));
             data_[i].~T();
         }
@@ -66,7 +66,7 @@ private:
     size_t capacity_ = 0;
 
     void destroy_elements() {
-        for (int i = 0; i < size_; i++) 
+        for (size_t i = 0; i < size_; i++) 
             data_[i].~T();
     }
 };

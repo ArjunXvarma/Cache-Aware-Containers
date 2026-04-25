@@ -16,13 +16,23 @@ enum class GrowthPolicy {
 inline size_t next_capacity(size_t current, GrowthPolicy policy) {
     if (current == 0) return 1;
 
+    size_t next;
+
     switch (policy) {
         case GrowthPolicy::Double:
-            return current * 2;
+            next = current * 2;
+            break;
+
         case GrowthPolicy::OnePointFive:
-            return current + current / 2;
+            next = current + current / 2;
+            break;
     }
-    return current * 2;
+
+    if (next <= current) {
+        next = current + 1;
+    }
+
+    return next;
 }
 
 template<typename T, size_t Alignment = 64, GrowthPolicy GP = GrowthPolicy::Double>
@@ -96,7 +106,7 @@ private:
     size_t capacity_ = 0;
 
     void destroy_elements() {
-        for (int i = 0; i < size_; i++) {
+        for (size_t i = 0; i < size_; i++) {
             data_[i].~T();
         }
     }
